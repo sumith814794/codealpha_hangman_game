@@ -1,0 +1,962 @@
+/* ==============================================================================
+   CODEALPHA INTERNSHIP PROJECT - TASK 1: HANGMAN GAME
+   Modern Dark-Glassmorphism Stylesheet (style.css)
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+/* ------------------------------------------------------------------------------
+   1. Design Tokens & CSS Variables
+   ------------------------------------------------------------------------------ */
+:root {
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.75);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --card-border-glow: rgba(56, 189, 248, 0.25);
+    --header-bg: rgba(15, 23, 42, 0.6);
+
+    /* Accent & Semantic Palette */
+    --cyan: #38bdf8;
+    --cyan-glow: rgba(56, 189, 248, 0.4);
+    --violet: #8b5cf6;
+    --violet-glow: rgba(139, 92, 246, 0.4);
+    --emerald: #10b981;
+    --emerald-glow: rgba(16, 185, 129, 0.35);
+    --crimson: #ef4444;
+    --crimson-glow: rgba(239, 68, 68, 0.35);
+    --amber: #f59e0b;
+    --amber-glow: rgba(245, 158, 11, 0.35);
+
+    /* Text Colors */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Interactive Elements */
+    --key-bg: rgba(51, 65, 85, 0.7);
+    --key-hover: #475569;
+    --key-border: rgba(255, 255, 255, 0.12);
+    --tile-bg: rgba(15, 23, 42, 0.6);
+
+    /* Elevation & Shadows */
+    --shadow-main: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 25px rgba(56, 189, 248, 0.2);
+    --radius-lg: 24px;
+    --radius-md: 14px;
+    --radius-sm: 8px;
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ------------------------------------------------------------------------------
+   2. Reset & Global Base Layout
+   ------------------------------------------------------------------------------ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px 16px;
+    position: relative;
+    overflow-x: hidden;
+    color: var(--text-primary);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.45);
+}
+
+/* ------------------------------------------------------------------------------
+   3. Ambient Glowing Background Orbs
+   ------------------------------------------------------------------------------ */
+.bg-shape {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(110px);
+    z-index: -1;
+    pointer-events: none;
+    animation: drift 16s infinite alternate ease-in-out;
+}
+
+.shape1 {
+    width: 480px;
+    height: 480px;
+    background: rgba(139, 92, 246, 0.35);
+    top: -12%;
+    left: -10%;
+}
+
+.shape2 {
+    width: 520px;
+    height: 520px;
+    background: rgba(56, 189, 248, 0.28);
+    bottom: -15%;
+    right: -12%;
+    animation-delay: -6s;
+}
+
+.shape3 {
+    width: 380px;
+    height: 380px;
+    background: rgba(16, 185, 129, 0.18);
+    top: 50%;
+    left: 75%;
+    animation-delay: -11s;
+}
+
+@keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(45px, 35px) scale(1.08); }
+    100% { transform: translate(-30px, 50px) scale(0.96); }
+}
+
+/* ------------------------------------------------------------------------------
+   4. Main Container (Glassmorphic Window)
+   ------------------------------------------------------------------------------ */
+.game-container {
+    width: 100%;
+    max-width: 960px;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-main);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transition: var(--transition-smooth);
+}
+
+.game-container:hover {
+    border-color: var(--card-border-glow);
+}
+
+/* ------------------------------------------------------------------------------
+   5. Header Bar
+   ------------------------------------------------------------------------------ */
+.game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    background: var(--header-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-badge {
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 4px 18px var(--cyan-glow);
+}
+
+.title-wrap h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.title-wrap .task-tag {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--cyan);
+    background: rgba(56, 189, 248, 0.12);
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Header Action Controls */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon-btn {
+    background: rgba(51, 65, 85, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 9px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: var(--transition-smooth);
+}
+
+.icon-btn:hover {
+    background: var(--key-hover);
+    color: #fff;
+    border-color: var(--cyan);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+}
+
+.icon-btn:active {
+    transform: translateY(0);
+}
+
+/* ------------------------------------------------------------------------------
+   6. Live Scoreboard Strip
+   ------------------------------------------------------------------------------ */
+.scoreboard-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: rgba(15, 23, 42, 0.45);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 28px;
+    gap: 12px;
+}
+
+.score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.score-item:last-child {
+    border-right: none;
+}
+
+.score-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.6px;
+    margin-bottom: 2px;
+}
+
+.score-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.score-value.wins { color: var(--emerald); }
+.score-value.losses { color: var(--crimson); }
+.score-value.rate { color: var(--cyan); }
+
+/* ------------------------------------------------------------------------------
+   7. Main Game Play Area (Split Grid)
+   ------------------------------------------------------------------------------ */
+.game-body {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 28px;
+    padding: 28px;
+}
+
+@media (max-width: 860px) {
+    .game-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ------------------------------------------------------------------------------
+   8. Left Column: Gallows Illustration & Lives Display
+   ------------------------------------------------------------------------------ */
+.gallows-panel {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.gallows-svg-wrap {
+    width: 100%;
+    max-width: 260px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.gallows-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+/* Gallows Structural Parts */
+.gallows-structure {
+    stroke: #475569;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.gallows-rope {
+    stroke: #f59e0b;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-dasharray: 4, 2;
+}
+
+/* Stickman Anatomical Parts (Revealed upon mistake) */
+.man-part {
+    stroke: var(--crimson);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.man-head {
+    fill: rgba(239, 68, 68, 0.15);
+    stroke: var(--crimson);
+}
+
+.man-part.revealed {
+    opacity: 1;
+    animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes dropIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Lives Meter & Visual Hearts */
+.lives-indicator {
+    width: 100%;
+    margin-top: 16px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.lives-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.lives-count {
+    color: var(--crimson);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+}
+
+.hearts-container {
+    display: flex;
+    gap: 6px;
+}
+
+.heart-icon {
+    font-size: 18px;
+    color: var(--crimson);
+    transition: transform 0.3s ease, color 0.3s ease;
+    filter: drop-shadow(0 0 6px var(--crimson-glow));
+}
+
+.heart-icon.lost {
+    color: #475569;
+    filter: none;
+    transform: scale(0.85);
+    opacity: 0.45;
+}
+
+.heart-icon.pulse {
+    animation: heartPulse 0.4s ease;
+}
+
+@keyframes heartPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.35); }
+}
+
+/* ------------------------------------------------------------------------------
+   9. Right Column: Gameplay Dashboard
+   ------------------------------------------------------------------------------ */
+.game-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Clue / Hint Card */
+.hint-card {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-left: 4px solid var(--cyan);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.hint-icon {
+    font-size: 18px;
+    color: var(--cyan);
+    margin-top: 1px;
+}
+
+.hint-content .hint-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--cyan);
+    margin-bottom: 2px;
+}
+
+.hint-content .hint-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.hint-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.starter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.hint-action-btn {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--cyan);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition-smooth);
+}
+
+.hint-action-btn:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.25);
+    border-color: var(--cyan);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);
+}
+
+.hint-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------------------
+   10. Secret Word Display Tiles
+   ------------------------------------------------------------------------------ */
+.word-display-area {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    padding: 24px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 90px;
+}
+
+.letter-slot {
+    width: 48px;
+    height: 56px;
+    background: var(--tile-bg);
+    border-bottom: 3px solid var(--cyan);
+    border-radius: 8px 8px 4px 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    transition: var(--transition-smooth);
+    user-select: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.letter-slot.revealed {
+    border-color: var(--emerald);
+    color: var(--emerald);
+    background: rgba(16, 185, 129, 0.08);
+    animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.letter-slot.missed {
+    border-color: var(--crimson);
+    color: var(--crimson);
+    opacity: 0.75;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ------------------------------------------------------------------------------
+   11. Feedback Banner / Notification Toast
+   ------------------------------------------------------------------------------ */
+.status-banner {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-smooth);
+    text-align: center;
+}
+
+.status-banner.info {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--cyan);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.status-banner.success {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--emerald);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    animation: pulseGlow 0.5s ease;
+}
+
+.status-banner.error {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--crimson);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    animation: shake 0.4s ease;
+}
+
+.status-banner.warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--amber);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* ------------------------------------------------------------------------------
+   12. Interactive On-Screen Virtual Keyboard
+   ------------------------------------------------------------------------------ */
+.keyboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.key-btn {
+    flex: 1;
+    max-width: 44px;
+    height: 44px;
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+}
+
+.key-btn:hover:not(:disabled) {
+    background: var(--key-hover);
+    border-color: var(--cyan);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.key-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Key States after guessing */
+.key-btn.correct {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: var(--emerald);
+    color: var(--emerald);
+    cursor: not-allowed;
+    box-shadow: 0 0 8px var(--emerald-glow);
+}
+
+.key-btn.wrong {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #64748b;
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.key-btn:disabled {
+    cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------------------
+   13. Secondary Full Word Guess Input Field
+   ------------------------------------------------------------------------------ */
+.full-guess-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.full-guess-input {
+    flex: 1;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    outline: none;
+    text-transform: uppercase;
+    transition: var(--transition-smooth);
+}
+
+.full-guess-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px var(--cyan-glow);
+    background: rgba(15, 23, 42, 0.85);
+}
+
+.full-guess-input::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-muted);
+}
+
+.action-btn {
+    background: linear-gradient(135deg, var(--cyan), #2563eb);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+/* ------------------------------------------------------------------------------
+   14. Modal Dialog (Game Over / Victory Screen)
+   ------------------------------------------------------------------------------ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-main);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-overlay.active .modal-card {
+    transform: scale(1);
+}
+
+.modal-icon-badge {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.modal-card.victory .modal-icon-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--emerald);
+    border: 2px solid var(--emerald);
+    box-shadow: 0 0 25px var(--emerald-glow);
+}
+
+.modal-card.defeat .modal-icon-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--crimson);
+    border: 2px solid var(--crimson);
+    box-shadow: 0 0 25px var(--crimson-glow);
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.modal-card.victory .modal-title { color: var(--emerald); }
+.modal-card.defeat .modal-title { color: var(--crimson); }
+
+.modal-message {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.modal-word-reveal {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 24px;
+}
+
+.modal-word-reveal span {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.modal-word-reveal strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+}
+
+.modal-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    box-shadow: 0 6px 18px var(--violet-glow);
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--cyan-glow);
+}
+
+/* ------------------------------------------------------------------------------
+   15. Responsive Adaptations
+   ------------------------------------------------------------------------------ */
+@media (max-width: 680px) {
+    body {
+        padding: 12px 8px;
+    }
+
+    .game-header {
+        padding: 14px 18px;
+    }
+
+    .brand-section {
+        gap: 10px;
+    }
+
+    .title-wrap h1 {
+        font-size: 17px;
+    }
+
+    .scoreboard-strip {
+        padding: 10px 14px;
+        gap: 6px;
+    }
+
+    .score-value {
+        font-size: 15px;
+    }
+
+    .game-body {
+        padding: 18px 14px;
+        gap: 18px;
+    }
+
+    .letter-slot {
+        width: 36px;
+        height: 44px;
+        font-size: 20px;
+    }
+
+    .key-btn {
+        max-width: 34px;
+        height: 38px;
+        font-size: 13px;
+    }
+
+    .full-guess-container {
+        flex-direction: column;
+    }
+
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

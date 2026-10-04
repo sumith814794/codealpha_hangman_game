@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game | CodeAlpha Internship Task 1</title>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Ambient Animated Mesh Gradient Elements -->
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2"></div>
+    <div class="bg-shape shape3"></div>
+
+    <!-- Main Game Window -->
+    <div class="game-container">
+        
+        <!-- Header -->
+        <header class="game-header">
+            <div class="brand-section">
+                <div class="logo-badge">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <div class="title-wrap">
+                    <h1>Hangman Game <span class="task-tag">Task 1</span></h1>
+                    <p class="subtitle">CodeAlpha Python Internship &bull; Word Guessing Challenge</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="new-game-btn" title="Restart Game">
+                    <i class="fa-solid fa-arrows-rotate"></i> New Word
+                </button>
+                <button class="icon-btn" id="reset-stats-btn" title="Reset Session Scoreboard">
+                    <i class="fa-solid fa-chart-simple"></i> Reset
+                </button>
+            </div>
+        </header>
+
+        <!-- Scoreboard Strip -->
+        <section class="scoreboard-strip">
+            <div class="score-item">
+                <span class="score-label">Played</span>
+                <span class="score-value" id="stat-played">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">Wins</span>
+                <span class="score-value wins" id="stat-wins">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">Losses</span>
+                <span class="score-value losses" id="stat-losses">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">Win Rate</span>
+                <span class="score-value rate" id="stat-rate">0%</span>
+            </div>
+        </section>
+
+        <!-- Main Body: Gallows + Game Controls -->
+        <main class="game-body">
+            
+            <!-- Left: Visual Gallows & Lives -->
+            <section class="gallows-panel">
+                <div class="gallows-svg-wrap">
+                    <svg class="gallows-svg" viewBox="0 0 200 250">
+                        <!-- Gallows Base and Beams -->
+                        <line x1="20" y1="230" x2="180" y2="230" class="gallows-structure" />
+                        <line x1="50" y1="230" x2="50" y2="20" class="gallows-structure" />
+                        <line x1="50" y1="20" x2="140" y2="20" class="gallows-structure" />
+                        <line x1="50" y1="60" x2="90" y2="20" class="gallows-structure" />
+                        <line x1="140" y1="20" x2="140" y2="55" class="gallows-rope" />
+
+                        <!-- Hangman Anatomical Parts (0-6 mistakes) -->
+                        <circle id="part-head" class="man-part man-head" cx="140" cy="75" r="20" />
+                        <line id="part-torso" class="man-part" x1="140" y1="95" x2="140" y2="155" />
+                        <line id="part-left-arm" class="man-part" x1="140" y1="110" x2="110" y2="135" />
+                        <line id="part-right-arm" class="man-part" x1="140" y1="110" x2="170" y2="135" />
+                        <line id="part-left-leg" class="man-part" x1="140" y1="155" x2="115" y2="195" />
+                        <line id="part-right-leg" class="man-part" x1="140" y1="155" x2="165" y2="195" />
+                    </svg>
+                </div>
+
+                <!-- Lives Meter -->
+                <div class="lives-indicator">
+                    <div class="lives-text">
+                        <span>Remaining Lives</span>
+                        <span class="lives-count" id="lives-counter">6 / 6</span>
+                    </div>
+                    <div class="hearts-container" id="hearts-container">
+                        <i class="fa-solid fa-heart heart-icon"></i>
+                        <i class="fa-solid fa-heart heart-icon"></i>
+                        <i class="fa-solid fa-heart heart-icon"></i>
+                        <i class="fa-solid fa-heart heart-icon"></i>
+                        <i class="fa-solid fa-heart heart-icon"></i>
+                        <i class="fa-solid fa-heart heart-icon"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Clues, Word Slots, Keyboard & Input -->
+            <section class="game-dashboard">
+                
+                <!-- Clue Card with Starter Middle Letter Badge and Reveal Button -->
+                <div class="hint-card">
+                    <i class="fa-regular fa-lightbulb hint-icon"></i>
+                    <div class="hint-content" style="width: 100%;">
+                        <div class="hint-header-row">
+                            <span class="hint-title">Clue &bull; Programming Concept</span>
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <span class="starter-badge" id="starter-badge">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Middle Letter: <strong id="middle-letter-display">?</strong>
+                                </span>
+                                <button class="hint-action-btn" id="extra-hint-btn" title="Reveal another letter">
+                                    <i class="fa-solid fa-lightbulb"></i> Reveal Letter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="hint-text" id="clue-text">Loading clue...</div>
+                    </div>
+                </div>
+
+                <!-- Secret Word Slots -->
+                <div class="word-display-area" id="word-slots">
+                    <!-- Letter boxes dynamically rendered here -->
+                </div>
+
+                <!-- Feedback Toast -->
+                <div class="status-banner info" id="status-banner">
+                    Click a letter or type on your keyboard to guess!
+                </div>
+
+                <!-- On-Screen Alphabet Keyboard -->
+                <div class="keyboard-section" id="keyboard">
+                    <!-- Key rows rendered via JS -->
+                </div>
+
+                <!-- Full Word Guess Option -->
+                <div class="full-guess-container">
+                    <input type="text" id="full-word-input" class="full-guess-input" placeholder="Think you know the full word? Type here..." maxlength="30" autocomplete="off">
+                    <button class="action-btn" id="full-guess-btn">
+                        <i class="fa-solid fa-bolt"></i> Guess Word
+                    </button>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Win / Game Over Modal -->
+    <div class="modal-overlay" id="game-modal">
+        <div class="modal-card" id="modal-card">
+            <div class="modal-icon-badge" id="modal-icon">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="modal-title" id="modal-title">Victory!</h2>
+            <p class="modal-message" id="modal-message">Congratulations! You solved the secret word without hanging!</p>
+            <div class="modal-word-reveal">
+                <span>The Secret Word Was</span>
+                <strong id="modal-revealed-word">PYTHON</strong>
+            </div>
+            <button class="modal-btn" id="modal-replay-btn">
+                <i class="fa-solid fa-rotate-right"></i> Play Another Round
+            </button>
+        </div>
+    </div>
+
+    <!-- Gameplay Script -->
+    <script>
+        // Expanded Word Bank (18 Diverse Programming Terms)
+        const WORD_BANK = [
+            { word: "PYTHON", hint: "A popular high-level programming language known for clean syntax." },
+            { word: "DEVELOPER", hint: "A person who designs, builds, and maintains software applications." },
+            { word: "VARIABLE", hint: "A named container in memory used to store data values." },
+            { word: "FUNCTION", hint: "A reusable block of code that executes a specific task when called." },
+            { word: "ALGORITHM", hint: "A step-by-step procedure or set of rules to solve a problem." },
+            { word: "DATABASE", hint: "An organized collection of structured information or data." },
+            { word: "FRONTEND", hint: "The client-facing visual part of an application users interact with." },
+            { word: "BACKEND", hint: "The server side of an application managing data, logic, and APIs." },
+            { word: "DEBUGGING", hint: "The process of detecting, diagnosing, and fixing errors in code." },
+            { word: "KEYBOARD", hint: "An input device with keys used to type code and commands." },
+            { word: "TERMINAL", hint: "A text-based command-line interface for running system commands." },
+            { word: "COMPILER", hint: "A program that translates source code into machine code." },
+            { word: "INTERNET", hint: "A global network connecting computers and systems worldwide." },
+            { word: "SOFTWARE", hint: "Programs and operating instructions used by a computer system." },
+            { word: "HARDWARE", hint: "The physical components and electronic circuits of a computer." },
+            { word: "BROWSER", hint: "An application used to navigate and view websites on the World Wide Web." },
+            { word: "SECURITY", hint: "The practice of defending digital systems and data from attacks." },
+            { word: "LOOPING", hint: "Repeating a block of instructions until a specific condition is met." }
+        ];
+
+        const MAX_LIVES = 6;
+        const HANGMAN_PARTS = [
+            "part-head",
+            "part-torso",
+            "part-left-arm",
+            "part-right-arm",
+            "part-left-leg",
+            "part-right-leg"
+        ];
+
+        // Non-repeating randomized deck queue
+        let deck = [];
+
+        function getNextWord() {
+            if (deck.length === 0) {
+                // Refill and shuffle deck
+                deck = [...WORD_BANK];
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+            }
+            return deck.pop();
+        }
+
+        // State Variables
+        let currentTarget = null;
+        let guessedLetters = new Set();
+        let mistakes = 0;
+        let isGameOver = false;
+        let starterLetter = "";
+
+        // Session Stats
+        let stats = {
+            played: 0,
+            wins: 0,
+            losses: 0
+        };
+
+        // DOM Elements
+        const wordSlotsEl = document.getElementById("word-slots");
+        const clueTextEl = document.getElementById("clue-text");
+        const statusBannerEl = document.getElementById("status-banner");
+        const keyboardEl = document.getElementById("keyboard");
+        const heartsContainerEl = document.getElementById("hearts-container");
+        const livesCounterEl = document.getElementById("lives-counter");
+        const fullWordInput = document.getElementById("full-word-input");
+        const fullGuessBtn = document.getElementById("full-guess-btn");
+        const newGameBtn = document.getElementById("new-game-btn");
+        const resetStatsBtn = document.getElementById("reset-stats-btn");
+        const starterBadgeEl = document.getElementById("starter-badge");
+        const middleLetterDisplayEl = document.getElementById("middle-letter-display");
+        const extraHintBtn = document.getElementById("extra-hint-btn");
+
+        // Modal Elements
+        const modalEl = document.getElementById("game-modal");
+        const modalCardEl = document.getElementById("modal-card");
+        const modalIconEl = document.getElementById("modal-icon");
+        const modalTitleEl = document.getElementById("modal-title");
+        const modalMessageEl = document.getElementById("modal-message");
+        const modalRevealedWordEl = document.getElementById("modal-revealed-word");
+        const modalReplayBtn = document.getElementById("modal-replay-btn");
+
+        // QWERTY Keyboard
+        const KEYBOARD_ROWS = [
+            ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+            ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+            ["Z", "X", "C", "V", "B", "N", "M"]
+        ];
+
+        function initKeyboard() {
+            keyboardEl.innerHTML = "";
+            KEYBOARD_ROWS.forEach(row => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "keyboard-row";
+                row.forEach(letter => {
+                    const btn = document.createElement("button");
+                    btn.className = "key-btn";
+                    btn.id = `key-${letter}`;
+                    btn.textContent = letter;
+                    btn.addEventListener("click", () => handleGuessLetter(letter));
+                    rowDiv.appendChild(btn);
+                });
+                keyboardEl.appendChild(rowDiv);
+            });
+        }
+
+        // Initialize or Restart Game
+        function startNewGame() {
+            isGameOver = false;
+            mistakes = 0;
+            guessedLetters.clear();
+            fullWordInput.value = "";
+            modalEl.classList.remove("active");
+            extraHintBtn.disabled = false;
+
+            // Pick next non-repeating word
+            currentTarget = getNextWord();
+
+            // Automatically reveal the middle letter to give a starter clue
+            const midIndex = Math.floor(currentTarget.word.length / 2);
+            starterLetter = currentTarget.word[midIndex];
+            guessedLetters.add(starterLetter);
+
+            middleLetterDisplayEl.textContent = starterLetter;
+            clueTextEl.textContent = currentTarget.hint;
+            showStatus(`💡 Starter Clue: Middle letter '${starterLetter}' has been pre-revealed!`, "info");
+
+            // Reset SVG stickman
+            HANGMAN_PARTS.forEach(partId => {
+                const part = document.getElementById(partId);
+                if (part) part.classList.remove("revealed");
+            });
+
+            // Reset Hearts & Lives Counter
+            updateLivesDisplay();
+
+            // Render Secret Word Slots
+            renderWordSlots();
+
+            // Reset Keyboard buttons & highlight starter letter
+            initKeyboard();
+            const starterKey = document.getElementById(`key-${starterLetter}`);
+            if (starterKey) starterKey.classList.add("correct");
+        }
+
+        function renderWordSlots() {
+            wordSlotsEl.innerHTML = "";
+            const word = currentTarget.word;
+
+            for (let char of word) {
+                const slot = document.createElement("div");
+                slot.className = "letter-slot";
+
+                if (guessedLetters.has(char)) {
+                    slot.textContent = char;
+                    slot.classList.add("revealed");
+                } else {
+                    slot.textContent = "";
+                }
+                wordSlotsEl.appendChild(slot);
+            }
+        }
+
+        function updateLivesDisplay() {
+            const livesRemaining = MAX_LIVES - mistakes;
+            livesCounterEl.textContent = `${livesRemaining} / ${MAX_LIVES}`;
+
+            const hearts = heartsContainerEl.querySelectorAll(".heart-icon");
+            hearts.forEach((heart, idx) => {
+                if (idx < livesRemaining) {
+                    heart.classList.remove("lost");
+                } else {
+                    heart.classList.add("lost");
+                }
+            });
+        }
+
+        function showStatus(message, type = "info") {
+            statusBannerEl.textContent = message;
+            statusBannerEl.className = `status-banner ${type}`;
+        }
+
+        function handleGuessLetter(letter) {
+            letter = letter.toUpperCase();
+            if (isGameOver || guessedLetters.has(letter)) return;
+
+            guessedLetters.add(letter);
+            const keyBtn = document.getElementById(`key-${letter}`);
+
+            if (currentTarget.word.includes(letter)) {
+                if (keyBtn) keyBtn.classList.add("correct");
+                showStatus(`Bravo! Letter '${letter}' is in the word!`, "success");
+                renderWordSlots();
+
+                const allRevealed = currentTarget.word.split("").every(c => guessedLetters.has(c));
+                if (allRevealed) {
+                    triggerEndGame(true);
+                }
+            } else {
+                if (keyBtn) keyBtn.classList.add("wrong");
+                mistakes++;
+
+                const partId = HANGMAN_PARTS[mistakes - 1];
+                if (partId) {
+                    const part = document.getElementById(partId);
+                    if (part) part.classList.add("revealed");
+                }
+
+                updateLivesDisplay();
+                showStatus(`Oops! Letter '${letter}' is not in the word.`, "error");
+
+                if (mistakes >= MAX_LIVES) {
+                    triggerEndGame(false);
+                }
+            }
+        }
+
+        function handleExtraHint() {
+            if (isGameOver) return;
+            const unrevealed = currentTarget.word.split("").filter(c => !guessedLetters.has(c));
+            if (unrevealed.length === 0) {
+                showStatus("All letters are already revealed!", "warning");
+                return;
+            }
+
+            const chosen = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+            guessedLetters.add(chosen);
+            const keyBtn = document.getElementById(`key-${chosen}`);
+            if (keyBtn) keyBtn.classList.add("correct");
+
+            renderWordSlots();
+            showStatus(`💡 Free Hint: Letter '${chosen}' revealed!`, "info");
+
+            const allRevealed = currentTarget.word.split("").every(c => guessedLetters.has(c));
+            if (allRevealed) {
+                triggerEndGame(true);
+            }
+        }
+
+        function handleFullWordGuess() {
+            if (isGameOver) return;
+            const guess = fullWordInput.value.trim().toUpperCase();
+            if (!guess) {
+                showStatus("Please enter a valid word guess!", "warning");
+                return;
+            }
+
+            if (guess === currentTarget.word) {
+                currentTarget.word.split("").forEach(c => guessedLetters.add(c));
+                renderWordSlots();
+                triggerEndGame(true);
+            } else {
+                mistakes++;
+                const partId = HANGMAN_PARTS[mistakes - 1];
+                if (partId) {
+                    const part = document.getElementById(partId);
+                    if (part) part.classList.add("revealed");
+                }
+                updateLivesDisplay();
+                showStatus(`"${guess}" is incorrect! You lost 1 life.`, "error");
+                fullWordInput.value = "";
+
+                if (mistakes >= MAX_LIVES) {
+                    triggerEndGame(false);
+                }
+            }
+        }
+
+        function triggerEndGame(won) {
+            isGameOver = true;
+            stats.played++;
+            extraHintBtn.disabled = true;
+
+            if (won) {
+                stats.wins++;
+                modalCardEl.className = "modal-card victory";
+                modalIconEl.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                modalTitleEl.textContent = "Spectacular Victory!";
+                modalMessageEl.textContent = "You successfully deduced the secret programming concept!";
+                showStatus("🎉 Congratulations! You won this round!", "success");
+            } else {
+                stats.losses++;
+                modalCardEl.className = "modal-card defeat";
+                modalIconEl.innerHTML = '<i class="fa-solid fa-skull"></i>';
+                modalTitleEl.textContent = "Game Over!";
+                modalMessageEl.textContent = "The stickman has been hung! Better luck next time.";
+                showStatus("💀 Out of lives! The word was revealed.", "error");
+
+                const slots = wordSlotsEl.querySelectorAll(".letter-slot");
+                currentTarget.word.split("").forEach((char, idx) => {
+                    if (!guessedLetters.has(char)) {
+                        slots[idx].textContent = char;
+                        slots[idx].classList.add("missed");
+                    }
+                });
+            }
+
+            modalRevealedWordEl.textContent = currentTarget.word;
+            updateStatsUI();
+
+            setTimeout(() => {
+                modalEl.classList.add("active");
+            }, 600);
+        }
+
+        function updateStatsUI() {
+            document.getElementById("stat-played").textContent = stats.played;
+            document.getElementById("stat-wins").textContent = stats.wins;
+            document.getElementById("stat-losses").textContent = stats.losses;
+            const rate = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
+            document.getElementById("stat-rate").textContent = `${rate}%`;
+        }
+
+        // Event Listeners
+        fullGuessBtn.addEventListener("click", handleFullWordGuess);
+        fullWordInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleFullWordGuess();
+        });
+
+        newGameBtn.addEventListener("click", startNewGame);
+        modalReplayBtn.addEventListener("click", startNewGame);
+        extraHintBtn.addEventListener("click", handleExtraHint);
+
+        resetStatsBtn.addEventListener("click", () => {
+            stats = { played: 0, wins: 0, losses: 0 };
+            updateStatsUI();
+            showStatus("Scoreboard reset to zero.", "info");
+        });
+
+        // Physical Keyboard Input Support
+        window.addEventListener("keydown", (e) => {
+            if (isGameOver) return;
+            if (document.activeElement === fullWordInput) return;
+
+            const key = e.key.toUpperCase();
+            if (/^[A-Z]$/.test(key)) {
+                handleGuessLetter(key);
+            }
+        });
+
+        // Launch Game
+        initKeyboard();
+        startNewGame();
+    </script>
+</body>
+</html>
