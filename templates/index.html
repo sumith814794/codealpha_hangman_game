@@ -32,7 +32,7 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button class="icon-btn" id="new-game-btn" title="Restart Game">
+                <button class="icon-btn" id="new-game-btn" title="Start New Word">
                     <i class="fa-solid fa-arrows-rotate"></i> New Word
                 </button>
                 <button class="icon-btn" id="reset-stats-btn" title="Reset Session Scoreboard">
@@ -75,7 +75,7 @@
                         <line x1="50" y1="60" x2="90" y2="20" class="gallows-structure" />
                         <line x1="140" y1="20" x2="140" y2="55" class="gallows-rope" />
 
-                        <!-- Hangman Anatomical Parts (0-6 mistakes) -->
+                        <!-- Hangman Anatomical Parts (Revealed on wrong guess) -->
                         <circle id="part-head" class="man-part man-head" cx="140" cy="75" r="20" />
                         <line id="part-torso" class="man-part" x1="140" y1="95" x2="140" y2="155" />
                         <line id="part-left-arm" class="man-part" x1="140" y1="110" x2="110" y2="135" />
@@ -105,7 +105,7 @@
             <!-- Right: Clues, Word Slots, Keyboard & Input -->
             <section class="game-dashboard">
                 
-                <!-- Clue Card with Starter Middle Letter Badge and Reveal Button -->
+                <!-- Clue Card with Middle Letter Starter Badge and Hint Button -->
                 <div class="hint-card">
                     <i class="fa-regular fa-lightbulb hint-icon"></i>
                     <div class="hint-content" style="width: 100%;">
@@ -125,9 +125,7 @@
                 </div>
 
                 <!-- Secret Word Slots -->
-                <div class="word-display-area" id="word-slots">
-                    <!-- Letter boxes dynamically rendered here -->
-                </div>
+                <div class="word-display-area" id="word-slots"></div>
 
                 <!-- Feedback Toast -->
                 <div class="status-banner info" id="status-banner">
@@ -135,9 +133,7 @@
                 </div>
 
                 <!-- On-Screen Alphabet Keyboard -->
-                <div class="keyboard-section" id="keyboard">
-                    <!-- Key rows rendered via JS -->
-                </div>
+                <div class="keyboard-section" id="keyboard"></div>
 
                 <!-- Full Word Guess Option -->
                 <div class="full-guess-container">
@@ -172,8 +168,8 @@
 
     <!-- Gameplay Script -->
     <script>
-        // Expanded Word Bank (18 Diverse Programming Terms)
-        const WORD_BANK = [
+        // Predefined Words & Hints (Exact match with app.py)
+        const LOCAL_WORD_BANK = [
             { word: "PYTHON", hint: "A popular high-level programming language known for clean syntax." },
             { word: "DEVELOPER", hint: "A person who designs, builds, and maintains software applications." },
             { word: "VARIABLE", hint: "A named container in memory used to store data values." },
@@ -204,21 +200,6 @@
             "part-right-leg"
         ];
 
-        // Non-repeating randomized deck queue
-        let deck = [];
-
-        function getNextWord() {
-            if (deck.length === 0) {
-                // Refill and shuffle deck
-                deck = [...WORD_BANK];
-                for (let i = deck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [deck[i], deck[j]] = [deck[j], deck[i]];
-                }
-            }
-            return deck.pop();
-        }
-
         // State Variables
         let currentTarget = null;
         let guessedLetters = new Set();
@@ -244,7 +225,6 @@
         const fullGuessBtn = document.getElementById("full-guess-btn");
         const newGameBtn = document.getElementById("new-game-btn");
         const resetStatsBtn = document.getElementById("reset-stats-btn");
-        const starterBadgeEl = document.getElementById("starter-badge");
         const middleLetterDisplayEl = document.getElementById("middle-letter-display");
         const extraHintBtn = document.getElementById("extra-hint-btn");
 
@@ -257,7 +237,7 @@
         const modalRevealedWordEl = document.getElementById("modal-revealed-word");
         const modalReplayBtn = document.getElementById("modal-replay-btn");
 
-        // QWERTY Keyboard
+        // QWERTY Keyboard Layout
         const KEYBOARD_ROWS = [
             ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
             ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
@@ -281,8 +261,31 @@
             });
         }
 
-        // Initialize or Restart Game
-        function startNewGame() {
+        // Fetch word from Python Flask backend /api/word or fall back to local list
+        async function fetchNewWord() {
+            try {
+                const res = await fetch("/api/word");
+                if (res.ok) {
+                    const data = await res.json();
+                    return {
+                        word: data.word,
+                        hint: data.hint,
+                        middle_letter: data.middle_letter
+                    };
+                }
+            } catch (err) {}
+
+            // Fallback
+            const entry = LOCAL_WORD_BANK[Math.floor(Math.random() * LOCAL_WORD_BANK.length)];
+            const mid = Math.floor(entry.word.length / 2);
+            return {
+                word: entry.word,
+                hint: entry.hint,
+                middle_letter: entry.word[mid]
+            };
+        }
+
+        async function startNewGame() {
             isGameOver = false;
             mistakes = 0;
             guessedLetters.clear();
@@ -290,17 +293,16 @@
             modalEl.classList.remove("active");
             extraHintBtn.disabled = false;
 
-            // Pick next non-repeating word
-            currentTarget = getNextWord();
+            // Get word from backend or local list
+            currentTarget = await fetchNewWord();
+            starterLetter = currentTarget.middle_letter;
 
-            // Automatically reveal the middle letter to give a starter clue
-            const midIndex = Math.floor(currentTarget.word.length / 2);
-            starterLetter = currentTarget.word[midIndex];
+            // Automatically pre-reveal the middle letter as a helpful starter clue
             guessedLetters.add(starterLetter);
-
             middleLetterDisplayEl.textContent = starterLetter;
             clueTextEl.textContent = currentTarget.hint;
-            showStatus(`💡 Starter Clue: Middle letter '${starterLetter}' has been pre-revealed!`, "info");
+
+            showStatus(`💡 Starter Clue: Middle letter '${starterLetter}' has been revealed!`, "info");
 
             // Reset SVG stickman
             HANGMAN_PARTS.forEach(partId => {
@@ -504,7 +506,7 @@
             showStatus("Scoreboard reset to zero.", "info");
         });
 
-        // Physical Keyboard Input Support
+        // Physical Keyboard Input
         window.addEventListener("keydown", (e) => {
             if (isGameOver) return;
             if (document.activeElement === fullWordInput) return;

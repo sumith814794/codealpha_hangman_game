@@ -1,131 +1,177 @@
-# 🎯 CodeAlpha Internship Project: Task 1 - Hangman Game
+# 🎯 CodeAlpha Internship Project: Task 1 - Enterprise Hangman Game
 
-A modern, clean, and intuitive text-based **Hangman Game** built with pure Python. Developed as part of the **CodeAlpha Python Programming Internship**.
-
----
-
-## 📌 Project Overview & Task Scope
-
-- **Goal:** Create a text-based Hangman game where the player guesses a secret word one letter at a time.
-- **Predefined Word Bank:** Uses a clean list of 5 curated programming-themed words with clues.
-- **Lives / Mistake Limit:** Strictly capped at **6 incorrect guesses** corresponding to the standard 6 anatomical parts of the stickman (Head, Torso, Left Arm, Right Arm, Left Leg, Right Leg).
-- **Environment:** Pure console input/output with cross-platform ANSI styling (compatible with Windows CMD, PowerShell, macOS Terminal, and Linux).
-- **Zero External Dependencies:** Built entirely with standard Python libraries.
+A full-stack, enterprise-grade **Hangman Game & CS Knowledge Platform** built with Python and modern Web technologies. Developed for the **CodeAlpha Python Programming Internship**.
 
 ---
 
-## 🚀 Key Python Concepts Demonstrated
+## 📌 Project Overview & Technical Scope
 
-| Concept | Implementation in Code |
+- **Goal:** Create an interactive Hangman game capable of serving **unlimited random words** with real-time dictionary definitions, avoiding any fixed or repetitive word lists.
+- **Unlimited Dynamic Dictionary:** Uses Python's standard `urllib.request` to dynamically query the open Datamuse Dictionary API in real-time across varied topics (technology, science, nature, space, animals, planet, etc.).
+- **Automatic Middle-Letter Foothold:** Pre-reveals the **middle character** of the target word as a starter clue to prevent frustration with long words.
+- **Fail-Safe Offline Mode:** Includes a local fallback word dictionary so the game remains 100% playable even if internet connection drops.
+- **Dual Execution Environments:** Run via modern responsive Flask Web UI with live animations, or directly in the terminal via `python app.py --cli`.
+- **Cloud Ready:** Fully configured with `vercel.json` and serverless entrypoint `api/index.py` for 1-click Vercel deployment.
+
+---
+
+## 🧠 5 Key Concepts Used (Internship Task Rubric)
+
+This project thoroughly demonstrates all 5 foundational Python concepts required by the CodeAlpha internship specification:
+
+### 1. `random` Module
+* **Dynamic Topic & Length Selection:** `random.choice(TOPICS)` and `random.randint(5, 8)` generate random query patterns for the dictionary API.
+* **Random Word Selection:** `random.choice(candidates)` picks a random word from the fetched pool, and `used_words.add(word)` prevents repeats.
+```python
+topic = random.choice(TOPICS)
+pattern = "?" * random.randint(5, 8)
+word, hint = random.choice(candidates)
+```
+
+---
+
+### 2. `while` Loops
+* **Continuous Turn Execution:** `while not session.is_finished:` keeps the gameplay turn loop alive while lives remain and the secret word has blanks.
+* **Session Replay Loop:** `while True:` wraps the game session so the player can seamlessly play consecutive rounds.
+* **Input Validation Loop:** `while True:` prompts for player input until a valid non-empty alphabetic character is received.
+```python
+while not session.is_finished:
+    # Display gallows, prompt for letter/word, process turn
+    ...
+```
+
+---
+
+### 3. `if-else` Conditional Logic
+* **Single vs. Full-Word Guess:** Evaluates `if len(guess) > 1:` to branch between full-concept deductions and individual character checks.
+* **Character Matching:** `if letter in target:` checks if the input character exists in the secret word; `else:` penalizes a life.
+* **Win/Loss State Detection:** Evaluates whether `all(c in guessed for c in target)` to trigger a win, or `if incorrect_guesses >= max_lives:` to trigger defeat.
+```python
+if letter in target:
+    if all(c in session.guessed_letters for c in target):
+        session.status = GameStatus.WON
+    else:
+        message = f"Bravo! Letter '{letter}' is in the word."
+else:
+    session.incorrect_guesses += 1
+    if session.incorrect_guesses >= session.max_lives:
+        session.status = GameStatus.LOST
+```
+
+---
+
+### 4. `strings` (Sanitization, Membership, Formatting)
+* **Sanitization & Normalization:** `raw_guess.strip().upper()` ensures consistent capitalization and strips accidental whitespace.
+* **Input Validation:** `.isalpha()` verifies that only valid English letters are submitted.
+* **Membership & Counting:** `letter in target` and `target.count(letter)` verify occurrences in the secret string.
+* **Middle-Letter Slicing:** `idx = len(word) // 2; mid_char = word[idx]` calculates and extracts the middle character for the starter clue.
+* **Dynamic String Joining:** `"  ".join(...)` dynamically formats the spaced letter blanks (`P  Y  T  H  _  N`).
+
+---
+
+### 5. `lists` (Collections, Framing, Display)
+* **Gallows ASCII Art Stages:** `HANGMAN_PICS` is a list of multi-line strings representing the 7 visual stages (0 to 6 mistakes).
+* **Word Taxonomy Catalogues:** `_CATALOGUE: List[WordEntry]` holds curated computer science concepts.
+* **Masked Word Letter Arrays:** `get_masked_word()` uses list comprehension:
+```python
+def get_masked_word(self) -> List[Optional[str]]:
+    return [c if c in self.guessed_letters else None for c in self.word_entry.word]
+```
+* **Sorted Guessed Lists:** `sorted(list(session.guessed_letters))` renders the historical guessed characters in alphabetical order.
+
+---
+
+## 🏛️ Advanced Software Engineering Architecture
+
+| Engineering Paradigm | Implementation in `app.py` |
 | :--- | :--- |
-| **`random` Module** | Used `random.randint()` to randomly pick a secret word and its hint from the word bank. |
-| **`while` Loops** | Powers the main gameplay loop (`while incorrect_guesses < 6`), the replay loop, and robust input validation loops. |
-| **`if-else` Logic** | Evaluates whether guessed letters exist in the secret word, tracks lives, and determines win/loss outcomes. |
-| **`strings`** | String sanitization (`.strip()`, `.upper()`), membership testing (`char in target_word`), character counting, and formatting. |
-| **`lists`** | Stores predefined words (`WORDS`), corresponding clues (`HINTS`), ASCII gallows art (`HANGMAN_PICS`), and tracks guessed letters (`guessed_letters`). |
+| **Object-Oriented Design (OOP)** | Modular domain architecture: `WordEntry`, `GameSession`, `WordRepository`, `ScoreEngine`, `HangmanService`. |
+| **Type Safety & Dataclasses** | PEP 484 type annotations (`List`, `Dict`, `Optional`, `Tuple`, `Set`) and `@dataclass(frozen=True)` value objects. |
+| **Domain Enums** | Strict typing for `Difficulty`, `Category`, and `GameStatus` with calculated properties. |
+| **Custom Exception Hierarchy** | `HangmanException`, `InvalidGuessException`, `SessionNotFoundException`, `HintExhaustedException`. |
+| **Algorithmic Scoring** | Mathematical score engine factoring base length, remaining health, elapsed speed, streak multipliers, and hint penalties. |
+| **State Machine & REST API** | RESTful JSON endpoints (`/api/game/new`, `/api/game/guess`, `/api/game/hint`, `/api/meta`). |
 
----
+## 🎨 Enterprise UI & Feature Highlights
 
-## 🎨 Design & User Experience Features
-
-1. **Aesthetic ASCII Art Gallows:**
-   - 7 visual stages rendering gallows and stickman progress from 0 to 6 mistakes.
-2. **Dynamic Dashboard:**
-   - **Visual Life Counter:** Visual hearts/pips (`♥♥♥♥··`) with exact remaining count `(4/6)`.
-   - **Clue / Category System:** Each word includes an intuitive hint to keep the game engaging.
-   - **Letter Progress Display:** Spaced underscores with correctly guessed letters highlighted in color.
-   - **Guessed Letters History:** Sorted list of all tried letters to prevent redundant guessing.
-3. **Friendly Input Validation:**
-   - Automatically ignores empty inputs and non-alphabetic characters.
-   - Alerts players if a letter was already guessed **without penalizing their remaining lives**.
-   - Supports guessing the **full word** directly for confident players!
-4. **Session Scoreboard & Replay System:**
-   - Tracks games played, wins, losses, and win rate percentage across multiple rounds.
-   - Graceful exit with `Ctrl+C` or typing `n` at the replay prompt.
+1. **Category & Taxonomy Filtering:**
+   - 🐍 *Python & Core Concepts*
+   - ⚡ *Algorithms & Data Structures*
+   - 🌐 *Full Stack Web Development*
+   - 🛡️ *Cybersecurity & Cryptography*
+   - ☁️ *Cloud & DevOps Architecture*
+   - 🤖 *Artificial Intelligence & Data*
+2. **Adaptive Difficulty Modes:**
+   - **Easy:** 8 Lives &bull; 3 Strategic Hints &bull; 1.0x Multiplier
+   - **Normal:** 6 Lives &bull; 2 Strategic Hints &bull; 1.5x Multiplier
+   - **Hard:** 5 Lives &bull; 1 Strategic Hint &bull; 2.2x Multiplier
+   - **Expert:** 4 Lives &bull; 0 Hints &bull; 3.5x Multiplier
+3. **Web Audio Synthesizer:**
+   - Synthesizes click blips, harmonic correct chimes, defeat buzzes, and polyphonic victory fanfares with sound toggle.
+4. **Live Round Timer & Speed Bonus:**
+   - Tracks elapsed seconds with a live clock, awarding bonus score points for lightning-fast solves.
+5. **Interactive Confetti Engine:**
+   - Canvas-based particle explosion celebrating victorious rounds.
+6. **Technical Explanations on Conclusion:**
+   - Displays real-world computer science definitions upon winning or losing to maximize educational value.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-D:\DAV PROJECT\codealpha intership project\
-├── Hangman Game\
-│   ├── hangman.py          # Classic CLI console game (ANSI colored)
-│   ├── app.py              # Flask server for Web UI edition
-│   ├── index.html          # Standalone Web edition (double-clickable)
-│   ├── static/
-│   │   └── style.css       # Modern dark-mode glassmorphic styling
-│   ├── templates/
-│   │   └── index.html      # Jinja2 Flask web template
-│   └── README.md           # Documentation and walkthrough
-├── Advanced Chatbot\       # Previous project
-└── Stock Portfolio Tracker\ # Previous project
+Hangman Game/
+├── api/
+│   └── index.py         # Vercel serverless function entrypoint
+├── static/
+│   └── style.css        # Modern glassmorphism stylesheet & animations
+├── templates/
+│   └── index.html       # Primary Flask web application template
+├── app.py               # Enterprise Python OOP engine (Web + REST + CLI)
+├── index.html           # Standalone offline/hybrid web edition
+├── requirements.txt     # Flask dependency specification
+├── vercel.json          # Vercel serverless rewrite configuration
+├── .gitignore           # Python and cloud ignore rules
+└── README.md            # Comprehensive project documentation
 ```
 
 ---
 
 ## 🎮 How to Run
 
-### Option 1: Classic Console Terminal (CLI)
-1. Open PowerShell or Command Prompt in the project folder:
-   ```powershell
-   python hangman.py
-   ```
-
-### Option 2: Modern Web Interface (Standalone Browser)
-- Simply double-click `index.html` in File Explorer or open with your favorite browser.
-
-### Option 3: Flask Local Web Server
-1. Launch the local Flask server:
+### Option 1: Modern Web Application (Recommended)
+1. Open PowerShell or Command Prompt in the project directory:
    ```powershell
    python app.py
    ```
-2. Open your browser at `http://127.0.0.1:5002`.
+2. Open your web browser at:
+   ```
+   http://127.0.0.1:5002
+   ```
 
----
-
-## 🕹️ Gameplay Preview
-
-```
-=================================================================
-       [#] CODEALPHA PYTHON INTERNSHIP: TASK 1 - HANGMAN [#]       
-=================================================================
-
-        +---+
-        |   |
-        O   |
-       /|   |
-            |
-            |
-      =========
-    
- Lives:        ♥ ♥ ♥ · · · (3/6 lives remaining)
- Hint / Clue:  A versatile high-level programming language
- ---------------------------------------------------------------
-
- Secret Word:  P  Y  T  H  _  N
-
- Guessed:      [ H, P, T, Y, Z, X, M ]
- ---------------------------------------------------------------
- [+] Correct! 'H' is in the word (1 time).
-
- >> Enter a letter (A-Z) or guess the full word:
+### Option 2: Console Terminal Mode (CLI)
+Run the ANSI-colored terminal game directly:
+```powershell
+python app.py --cli
 ```
 
----
-
-## 📜 Word Bank & Hint Features
-
-- **Non-Repeating Shuffled Deck:** Words are served in a randomized queue that exhausts all 18 tech words before reshuffling. Words will **never repeat consecutively**!
-- **Middle-Letter Starter Clue:** At the start of every game, the letter in the **middle** of the secret word is automatically revealed (e.g. `L` in `DEVELOPER` or `A` in `VARIABLE`) to give you an immediate foothold.
-- **In-Game Hint Support:**
-  - **Terminal (CLI):** Type `hint` anytime to reveal an extra letter.
-  - **Web UI:** Click the **"💡 Reveal Letter"** button to uncover another letter.
-
-### Curated Tech Words:
-1. `PYTHON` &bull; 2. `DEVELOPER` &bull; 3. `VARIABLE` &bull; 4. `FUNCTION` &bull; 5. `ALGORITHM` &bull; 6. `DATABASE`
-7. `FRONTEND` &bull; 8. `BACKEND` &bull; 9. `DEBUGGING` &bull; 10. `KEYBOARD` &bull; 11. `TERMINAL` &bull; 12. `COMPILER`
-13. `INTERNET` &bull; 14. `SOFTWARE` &bull; 15. `HARDWARE` &bull; 16. `BROWSER` &bull; 17. `SECURITY` &bull; 18. `LOOPING`
+### Option 3: Standalone Browser Edition
+- Double-click `index.html` in File Explorer to launch the complete client-side game without any server.
 
 ---
-*Created for CodeAlpha Internship - Task 1 (Hangman Game)*
+
+## 🌐 Deploy to Vercel (Live Worldwide URL)
+
+The repository includes pre-configured serverless files (`vercel.json` and `api/index.py`).
+
+1. Push your code to GitHub:
+   ```powershell
+   git add .
+   git commit -m "Deploy Enterprise Hangman to Vercel"
+   git push -u origin main
+   ```
+2. Go to **[vercel.com/new](https://vercel.com/new)**.
+3. Import your GitHub repository and click **Deploy**.
+
+---
+*Created for CodeAlpha Internship - Task 1 (Enterprise Hangman Game)*
