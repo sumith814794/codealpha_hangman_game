@@ -351,27 +351,101 @@ app = Flask(
 )
 
 
-@app.route("/static/<path:filename>")
-def static_files(filename):
-    """Serves CSS styles and static files."""
-    return send_from_directory(static_dir, filename)
+# WSGI Middleware to restore original request paths behind Vercel serverless rewrites
+class VercelPathFix:
+    def __init__(self, wsgi):
+        self.wsgi = wsgi
+
+    def __call__(self, env, start_response):
+        matched = (
+            env.get("HTTP_X_MATCHED_PATH")
+            or env.get("HTTP_X_FORWARDED_URI")
+            or env.get("HTTP_X_INVOKE_PATH")
+        )
+        if matched:
+            env["PATH_INFO"] = matched.split("?")[0]
+        return self.wsgi(env, start_response)
+
+
+app.wsgi_app = VercelPathFix(app.wsgi_app)
+
+
+def get_html_content():
+    """Locates and reads index.html safely across local, Docker, and Vercel environments."""
+    candidate_paths = [
+        os.path.join(BASE_DIR, "templates", "index.html"),
+        os.path.join(BASE_DIR, "index.html"),
+        os.path.join(BASE_DIR, "public", "index.html"),
+        os.path.join(os.path.dirname(BASE_DIR), "templates", "index.html"),
+        os.path.join(os.path.dirname(BASE_DIR), "index.html"),
+        os.path.join(os.path.dirname(BASE_DIR), "public", "index.html"),
+    ]
+    for path in candidate_paths:
+        if os.path.isfile(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception:
+                pass
+    try:
+        return render_template("index.html")
+    except Exception:
+        return "<h1>Hangman Game</h1><p>Please refresh...</p>"
 
 
 @app.route("/")
 @app.route("/index")
 @app.route("/index.html")
+@app.route("/api/index")
+@app.route("/api/index.py")
+@app.route("/api")
 def home():
-    """Serves the interactive web page."""
-    return render_template("index.html")
+    """Serves the interactive web page across all path variants."""
+    return get_html_content(), 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 @app.route("/api/word")
+@app.route("/word")
 def api_word():
     """
     Returns an unlimited fresh random word, its definition hint,
     and middle starter letter in JSON format.
     """
     return jsonify(get_random_word())
+
+
+@app.route("/style.css")
+@app.route("/static/style.css")
+def serve_css():
+    """Serves CSS styling sheet with correct Content-Type."""
+    for path in [
+        os.path.join(static_dir, "style.css"),
+        os.path.join(BASE_DIR, "static", "style.css"),
+        os.path.join(BASE_DIR, "style.css"),
+        os.path.join(os.path.dirname(BASE_DIR), "static", "style.css"),
+    ]:
+        if os.path.isfile(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return f.read(), 200, {"Content-Type": "text/css; charset=utf-8"}
+            except Exception:
+                pass
+    return send_from_directory(static_dir, "style.css", mimetype="text/css")
+
+
+@app.route("/static/<path:filename>")
+def static_files(filename):
+    """Serves static files."""
+    return send_from_directory(static_dir, filename)
+
+
+@app.errorhandler(404)
+def handle_404(e):
+    """Fallback handler to prevent 404 error page on Vercel."""
+    from flask import request
+    if request.path.endswith("/word") or request.path.endswith("api/word"):
+        return jsonify(get_random_word())
+    return get_html_content(), 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 # ------------------------------------------------------------------------------
